@@ -5,12 +5,13 @@ Rode com: pytest test_transferencia.py -v
 import sqlite3
 import pytest
 import transferencia
+import conta
 
 
 @pytest.fixture
 def banco_temporario(tmp_path):
     caminho = str(tmp_path / "banco_teste.db")
-    transferencia.criar_tabela_contas(caminho)
+    conta.criar_tabela_contas(caminho)
 
     conn = sqlite3.connect(caminho)
     conn.execute("INSERT INTO contas (id, titular, saldo) VALUES (1, 'Ana', 100)")
@@ -21,20 +22,11 @@ def banco_temporario(tmp_path):
     return caminho
 
 
-def saldo_de(caminho_banco, id_conta):
-    conn = sqlite3.connect(caminho_banco)
-    saldo = conn.execute(
-        "SELECT saldo FROM contas WHERE id = ?", (id_conta,)
-    ).fetchone()[0]
-    conn.close()
-    return saldo
-
-
 def test_transferencia_com_saldo_suficiente(banco_temporario):
     transferencia.transferir(banco_temporario, id_origem=1, id_destino=2, valor=30)
 
-    assert saldo_de(banco_temporario, 1) == 70
-    assert saldo_de(banco_temporario, 2) == 80
+    assert conta.saldo_de(banco_temporario, 1) == 70
+    assert conta.saldo_de(banco_temporario, 2) == 80
 
 
 def test_transferencia_sem_saldo_suficiente_desfaz_tudo(banco_temporario):
@@ -42,5 +34,5 @@ def test_transferencia_sem_saldo_suficiente_desfaz_tudo(banco_temporario):
         transferencia.transferir(banco_temporario, id_origem=1, id_destino=2, valor=500)
 
     # prova de que o rollback funcionou: nenhum saldo mudou
-    assert saldo_de(banco_temporario, 1) == 100
-    assert saldo_de(banco_temporario, 2) == 50
+    assert conta.saldo_de(banco_temporario, 1) == 100
+    assert conta.saldo_de(banco_temporario, 2) == 50

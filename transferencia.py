@@ -3,31 +3,8 @@ DESAFIO: transferência entre contas com TRANSAÇÃO.
 
 Rode `pytest test_transferencia.py -v` pra ver se passa.
 
-A tabela tem uma restrição CHECK (saldo >= 0) de propósito: o próprio
-SQLite vai recusar um UPDATE que deixaria alguém com saldo negativo,
-levantando sqlite3.IntegrityError. É essa exceção que seu código
-precisa capturar pra fazer o rollback.
 """
 import sqlite3
-
-
-def criar_tabela_contas(caminho_banco: str):
-    """
-    Cria a tabela `contas` com as colunas:
-      id      INTEGER PRIMARY KEY
-      titular TEXT NOT NULL
-      saldo   INTEGER NOT NULL, com CHECK (saldo >= 0)
-    Não esqueça do conn.commit() no final.
-
-    """
-    conn = sqlite3.connect(caminho_banco)
-    conn.execute("CREATE TABLE IF NOT EXISTS contas"
-    "(id INTEGER PRIMARY KEY," \
-    "titular TEXT NOT NULL," \
-    "saldo INTEGER NOT NULL CHECK (saldo >= 0))")
-    conn.commit()
-    conn.close()
-
 
 def transferir(caminho_banco: str, id_origem: int, id_destino: int, valor: int):
     """
@@ -46,7 +23,7 @@ def transferir(caminho_banco: str, id_origem: int, id_destino: int, valor: int):
         cursor.execute("UPDATE contas SET saldo = saldo - ? WHERE id = ?", (valor, id_origem))
         cursor.execute("UPDATE contas SET saldo = saldo + ? WHERE id = ?", (valor, id_destino))
         conn.commit()
-    except sqlite3.IntegrityError:
+    except sqlite3.IntegrityError as e:
         conn.rollback()
         raise
     finally:
