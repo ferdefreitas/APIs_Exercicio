@@ -19,9 +19,14 @@ def criar_tabela_contas(caminho_banco: str):
       saldo   INTEGER NOT NULL, com CHECK (saldo >= 0)
     Não esqueça do conn.commit() no final.
 
-    TODO: implemente isso.
     """
-    raise NotImplementedError
+    conn = sqlite3.connect(caminho_banco)
+    conn.execute("CREATE TABLE IF NOT EXISTS contas"
+    "(id INTEGER PRIMARY KEY," \
+    "titular TEXT NOT NULL," \
+    "saldo INTEGER NOT NULL CHECK (saldo >= 0))")
+    conn.commit()
+    conn.close()
 
 
 def transferir(caminho_banco: str, id_origem: int, id_destino: int, valor: int):
@@ -34,9 +39,15 @@ def transferir(caminho_banco: str, id_origem: int, id_destino: int, valor: int):
       porque o saldo ficaria negativo): conn.rollback() e relance o
       erro (raise), pra quem chamou saber que a transferência falhou.
     - De qualquer forma (deu certo ou não), feche a conexão no final.
-
-    Dica: isso pede um try / except / finally.
-
-    TODO: implemente isso.
     """
-    raise NotImplementedError
+    try:
+        conn = sqlite3.connect(caminho_banco)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE contas SET saldo = saldo - ? WHERE id = ?", (valor, id_origem))
+        cursor.execute("UPDATE contas SET saldo = saldo + ? WHERE id = ?", (valor, id_destino))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
